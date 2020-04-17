@@ -1,0 +1,10 @@
+POST  http://localhost:3003/api/blogs
+content-type: application/json
+
+
+{
+  "title": "Forth Blog ",
+  "author": "No one",
+  "url": "http://localhost:3003/api/blogs",
+  "likes": 23
+}
