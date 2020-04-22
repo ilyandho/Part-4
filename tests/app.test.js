@@ -126,7 +126,7 @@ describe('When there is innititially some blogs in the database, ', () => {
   });
 
   describe('Updating a blog', () => {
-    test('successfully updates a blog post if id is valid', async () => {
+    test('successfully updates a blog post if id is valid and user is logged in', async () => {
       const newBlog = {
         title: 'Fourth Blog',
         url: 'http://localhost:3003/api/blogs',
@@ -147,6 +147,7 @@ describe('When there is innititially some blogs in the database, ', () => {
 
       const response = await api
         .put(`/api/blogs/${id}`)
+        .set('Authorization', `Bearer ${globalToken}`)
         .send({ likes: 1 })
         .expect(201);
 
@@ -154,11 +155,20 @@ describe('When there is innititially some blogs in the database, ', () => {
 
       expect(likes).toBe(1);
     });
+    test('fails with status code 401 if the user is not logged in', async () => {
+      const newBlog = {
+        title: 'Fourth Blog',
+        url: 'http://localhost:3003/api/blogs',
+      };
+
+      await api.post('/api/blogs/').send(newBlog).expect(401);
+    });
     test('fails with a status code 400 if the id is invalid', async () => {
       const invalidId = '5ea04b736ef98c3074c42806';
 
       const response = await api
         .put(`/api/blogs/${invalidId}`)
+        .set('Authorization', `Bearer ${globalToken}`)
         .send({ likes: 1 })
         .expect(400);
     });

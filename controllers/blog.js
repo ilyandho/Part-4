@@ -93,12 +93,33 @@ blogsRouter.delete('/:id', async (req, res) => {
 });
 
 blogsRouter.put('/:id', async (req, res) => {
-  const blog = await Blog.findById(req.params.id);
+  if (!req.token) {
+    return res
+      .status(401)
+      .json({ error: "You have not provided the token/you're no tauthorized" });
+  }
+
+  // Decode token and verify the info
+  const decodedToken = jwt.verify(req.token, process.env.SECRET);
+
+  if (!req.token || !decodedToken.id) {
+    return res.status(401).json({ error: 'token missing or invalid' });
+  }
+
+  console.log(decodedToken.id);
+  const blog = await Blog.findById(req.params.id).populate('user');
+
   // Check if the 'id' is associated with any blog
   if (!blog) {
     return res.status(400).end();
   }
 
+  // Check if the userId in the token is the same as that for the user in the blog dbs
+  if (!(blog.user.id === decodedToken.id)) {
+    return res
+      .status(401)
+      .json({ error: "You're not authorised to updated this blog" });
+  }
   const updatedBlog = await Blog.findByIdAndUpdate(req.params.id, req.body, {
     new: true,
   });

@@ -1,7 +1,8 @@
-PUT   http://localhost:3003/api/blogs/5ea04b736ef98c3074c42806
+PUT   http://localhost:3003/api/blogs/5ea0b853fae16816e41fe8a2
 content-type: application/json
+Authorization: bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6IlNpeHRoIiwiaWQiOiI1ZWEwYmE1OWJhMzE1NDJmOTQ0ODlmMDQiLCJpYXQiOjE1ODc1OTMyODB9.7l0pYUUyiktDpwe9nRUmbwOFvq6rTMr16EQhk3HYeiE
 
 
 {
-  "title": "Fourth Blog"
+  "title": "Fourth Blo"
 }
