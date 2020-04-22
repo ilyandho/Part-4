@@ -12,6 +12,8 @@ const middleware = require('./utils/middelware');
 const Blog = require('./models/Blog');
 // Controllers
 const blogsRouters = require('./controllers/blog');
+const usersRouters = require('./controllers/users');
+const loginRouter = require('./controllers/login');
 
 logger.info('connecting to', config.MONGODB_URI);
 mongoose
@@ -27,9 +29,14 @@ mongoose
 app.use(cors());
 app.use(express.json());
 app.use(middleware.requestLogger);
+app.use(middleware.tokenExtractor);
 
 // Routes
 app.use('/api/blogs/', blogsRouters);
+
+app.use('/api/users/', usersRouters);
+
+app.use('/api/login/', loginRouter);
 
 app.use(middleware.unknownEndpoint);
 app.use(middleware.errorHandler);

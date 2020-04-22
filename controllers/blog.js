@@ -1,18 +1,108 @@
+require('express-async-errors');
 const blogsRouter = require('express').Router();
-const Blog = require('../models/Blog');
+const jwt = require('jsonwebtoken');
 
-blogsRouter.get('/', (req, res) => {
-  Blog.find({}).then((blogs) => {
-    res.json(blogs);
+// Models
+const Blog = require('../models/Blog');
+const User = require('../models/User');
+
+// Helper function for extracting the token from the POST req
+
+blogsRouter.get('/', async (req, res) => {
+  const blogs = await Blog.find({}).populate('user', {
+    username: 1,
+    name: 1,
+    id: 1,
   });
+  res.json(blogs.map((blog) => blog.toJSON()));
 });
 
-blogsRouter.post('/', (req, res) => {
-  const blog = new Blog(req.body);
+blogsRouter.post('/', async (req, res) => {
+  if (!req.token) {
+    return res
+      .status(401)
+      .json({ error: "You have not provided the token/you're no tauthorized" });
+  }
+  if (!req.body.title && !req.body.url) {
+    return res.status(400).send(`Please provide 'title' and 'url`);
+  } else if (!req.body.title) {
+    return res.status(400).send(`Please provide 'title' `);
+  } else if (!req.body.url) {
+    return res.status(400).send(`Please provide  'url`);
+  }
 
-  blog.save().then((result) => {
-    res.status(201).json(result);
+  // Decode token and verify the info
+  const decodedToken = jwt.verify(req.token, process.env.SECRET);
+
+  if (!req.token || !decodedToken.id) {
+    return res.status(401).json({ error: 'token missing or invalid' });
+  }
+
+  // Check for the existance of user in dbs
+  const user = await User.findById(decodedToken.id);
+  if (!user) {
+    return res.status(401).send({ error: 'user does not exist' });
+  }
+
+  const { title, url, likes } = req.body;
+
+  const blog = new Blog({
+    title,
+    author: user.name,
+    url,
+    likes,
+    user: user._id,
   });
+
+  const result = await blog.save();
+
+  user.blogs = user.blogs.concat(result._id);
+  await user.save();
+  res.status(201).json(result.populate('user'));
+});
+
+blogsRouter.delete('/:id', async (req, res) => {
+  if (!req.token) {
+    return res
+      .status(401)
+      .json({ error: "You have not provided the token/you're no tauthorized" });
+  }
+  // Decode the token
+  const decodedToken = jwt.verify(req.token, process.env.SECRET);
+  if (!req.token || !decodedToken.id) {
+    return res.status(401).json({ error: 'token missing or invalid' });
+  }
+
+  const blog = await Blog.findById({ _id: req.params.id });
+
+  if (!blog) {
+    return res
+      .status(400)
+      .json({ error: 'Blog not found or it is already deleted' });
+  }
+
+  if (blog.user.toString() === decodedToken.id.toString()) {
+    const id = req.params.id;
+    await Blog.findByIdAndDelete({ _id: id });
+    return res.status(204).end();
+  } else {
+    return res
+      .status(401)
+      .json({ error: 'You are not authorized to delete this' });
+  }
+});
+
+blogsRouter.put('/:id', async (req, res) => {
+  const blog = await Blog.findById(req.params.id);
+  // Check if the 'id' is associated with any blog
+  if (!blog) {
+    return res.status(400).end();
+  }
+
+  const updatedBlog = await Blog.findByIdAndUpdate(req.params.id, req.body, {
+    new: true,
+  });
+  res.status(201).json(updatedBlog);
 });
 
 module.exports = blogsRouter;
