@@ -10,6 +10,7 @@ const config = require('./utils/config');
 const middleware = require('./utils/middelware');
 // Moddels
 const Blog = require('./models/Blog');
+
 // Controllers
 const blogsRouters = require('./controllers/blog');
 const usersRouters = require('./controllers/users');
@@ -32,6 +33,12 @@ app.use(middleware.requestLogger);
 app.use(middleware.tokenExtractor);
 
 // Routes
+// To only be availed if we're in the test environment
+if (process.env.NODE_ENV === 'test') {
+  const testingRouter = require('./controllers/testing');
+  app.use('/api/testing', testingRouter);
+}
+
 app.use('/api/blogs/', blogsRouters);
 
 app.use('/api/users/', usersRouters);
